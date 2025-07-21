@@ -1,16 +1,70 @@
 services:
 
-  json-server:
-    image: vimagick/json-server
-    command: -h 0.0.0.0 -p 8080 /config/db.json
-    stop_grace_period: 1s
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./config:/config
+  # json-server:
+  #   image: vimagick/json-server
+  #   command: -h 0.0.0.0 -p 8080 /config/db.json
+  #   stop_grace_period: 1s
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./config:/config
 
-  tcpdump:
-    image: alpine
-    command: sh -c "apk add --no-cache ngrep && ngrep -l -s 200000 -d any -W byline -q -t '^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS) ' port 8080"
-    network_mode: "service:json-server"
-    stop_grace_period: 1s
+  # tcpdump:
+  #   image: alpine
+  #   command: sh -c "apk add --no-cache ngrep && ngrep -l -s 200000 -d any -W byline -q -t '^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS) ' port 8080"
+  #   network_mode: "service:json-server"
+  #   stop_grace_period: 1s
+  ms-merchant-transactions-nest:
+    container_name: ms-merchant-transactions
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run start:dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_ADMIN_PORT=${RABBITMQ_ADMIN_PORT}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+    depends_on:
+      - ms-merchant-transactions-db
+      - ms-merchant-transactions-rabbitmq
+
+  ms-merchant-transactions-db:
+    image: mysql:8.0
+    container_name: ms-merchant-transactions-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      #MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ms-merchant-transactions-db-data:/var/lib/ms-merchant-transactions-db
+
+  ms-merchant-transactions-rabbitmq:
+      image: rabbitmq:3-management
+      container_name: ms-merchant-transactions-rabbitmq
+      ports:
+        - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+        - "${RABBITMQ_ADMIN_PORT}:${RABBITMQ_ADMIN_PORT}"
+      environment:
+        RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+        RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+volumes:
+  ms-merchant-transactions-db-data:
