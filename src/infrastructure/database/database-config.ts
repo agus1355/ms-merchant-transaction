@@ -4,5 +4,5 @@ export const getDatabaseConfig = () => ({
   username: process.env.DB_USERNAME || 'root',
   password: process.env.DB_PASSWORD || 'secret',
   database: process.env.DB_HOST || 'testdb',
-  syncronize: true,
+  syncronize: false,
 });

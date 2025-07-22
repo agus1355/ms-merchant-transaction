@@ -2,6 +2,7 @@
 
 import { DataSource } from 'typeorm';
 import { getDatabaseConfig } from './database-config';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 const db = getDatabaseConfig();
 
@@ -14,5 +15,6 @@ export const AppDataSource = new DataSource({
   database: db.database,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/infrastructure/database/migrations/*.js'],
+  namingStrategy: new SnakeNamingStrategy(),
   synchronize: db.syncronize, 
 });
